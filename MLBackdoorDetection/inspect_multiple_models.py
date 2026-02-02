@@ -39,15 +39,17 @@ def _inspect_one_model(saved_model_file, model_arch, opt, n_cls, size, method='F
 
 
 method_name = 'FreeEagle'
-root = 'D:/MyCodes/MLBackdoorDetection/saved_models'
-
+# root = 'D:/MyCodes/MLBackdoorDetection/saved_models'
+root = './saved_models'
 # generate paths of saved model files
-datasets = ['imagenet_subset', 'gtsrb', 'cifar10', 'mnist']
+# datasets = ['imagenet_subset', 'gtsrb', 'cifar10', 'mnist']
+datasets = ['cifar10']
 
 dataset_re_ag_dict = {'imagenet_subset': 10, 'cifar10': 20, 'gtsrb': 5, 'mnist': 20}
 dataset_re_sp_dict = {'imagenet_subset': 3, 'cifar10': 8, 'gtsrb': 4, 'mnist': 8}
 
-dataset_arch_dict = {'imagenet_subset': 'resnet50', 'cifar10': 'vgg16', 'gtsrb': 'google_net', 'mnist': 'simple_cnn'}
+# dataset_arch_dict = {'imagenet_subset': 'resnet50', 'cifar10': 'vgg16', 'gtsrb': 'google_net', 'mnist': 'simple_cnn'}
+dataset_arch_dict = {'cifar10': 'resnet18'}
 dataset_ncls_dict = {'imagenet_subset': 20, 'cifar10': 10, 'gtsrb': 43, 'mnist': 10}
 dataset_size_dict = {'imagenet_subset': 224, 'cifar10': 32, 'gtsrb': 32, 'mnist': 28}
 dataset_specific_backdoor_targeted_classes_dict = {'imagenet_subset': [0, 12, 14, 18],
@@ -72,14 +74,14 @@ for dataset in datasets:
     for benign_model_id in range(200):
         benign_model_id += 1
         saved_model_file = f'{root}/{dataset}_models/{dataset}_{model_arch}_{benign_model_id}/last.pth'
-        try:
-            _anomaly_metric = _inspect_one_model(saved_model_file, model_arch, opt, _n_cls, _size, method_name)
-        except FileNotFoundError:
-            print(f'File not found.')
-            continue
-        except RuntimeError:
-            print('Ckpt file corrupted.')
-            continue
+        # try:
+        _anomaly_metric = _inspect_one_model(saved_model_file, model_arch, opt, _n_cls, _size, method_name)
+        # except FileNotFoundError:
+        #     print(f'File not found.')
+        #     continue
+        # except RuntimeError:
+        #     print('Ckpt file corrupted in multiple models 1.')
+        #     continue
         backdoor_settings = ('None', 'None', 'None', 'None')
         df = save_to_df(df, _anomaly_metric, dataset, _n_cls, backdoor_settings)
         df.to_csv(f'results_benign_{method_name}.csv', index=False)
@@ -116,7 +118,7 @@ for dataset in datasets:
                     print(f'File not found.')
                     break
                 except RuntimeError:
-                    print('Ckpt file corrupted.')
+                    print('Ckpt file corrupted in multiple models 2.')
                     continue
                 _n_cls = dataset_ncls_dict[dataset]
                 backdoor_settings = ('agnostic', trigger_type, 'None', targeted_class)
@@ -141,7 +143,7 @@ for dataset in datasets:
                             print(f'File not found.')
                             break
                         except RuntimeError:
-                            print('Ckpt file corrupted.')
+                            print('Ckpt file corrupted in multiple models 3.')
                             continue
                         _n_cls = dataset_ncls_dict[dataset]
                         backdoor_settings = ('specific', trigger_type, _source_class, _specific_backdoor_targeted_class)
@@ -165,7 +167,7 @@ for natural_backdoor_model_id in range(1, NATURAL_MODEL_NUM):
         print(f'File not found.')
         break
     except RuntimeError:
-        print('Ckpt file corrupted.')
+        print('Ckpt file corrupted in multiple models 4.')
         continue
     backdoor_settings = ('specific', 'natural_grass_img', 13, 0)
     df = save_to_df(df, _anomaly_metric, 'poisoned_imagenet_subset', 20, backdoor_settings)
@@ -213,7 +215,7 @@ for adaptive_attack_marker in adaptive_attack_markers:
             print(f'File not found.')
             continue
         except RuntimeError:
-            print('Ckpt file corrupted.')
+            print('Ckpt file corrupted in multiple models 5.')
             continue
         backdoor_settings = ('agnostic', 'filter_img', 'None', target_class)
         df = save_to_df(df, _anomaly_metric, 'poisoned_gtsrb', 43, backdoor_settings,
