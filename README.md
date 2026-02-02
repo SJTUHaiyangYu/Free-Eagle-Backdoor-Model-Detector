@@ -1,24 +1,82 @@
-# Data-Free-Neural-Backdoor-Detector-FreeEagle
-Code of the paper *FreeEagle: Detecting Complex Neural Trojans in Data-Free Cases* on Usenix Security 2023.
-A data-free backdoor detector for deep neural networks.
+# FreeEagle (a forked and adapted version)
 
-## Quick Start
-### Train trojaned and benign models.
+This repository is a fork adapted to support batch model detection and a reproducible Poetry-managed Python environment.
 
-Use *MLBackdoorDetection/backdoor_attack_simulation/train_all_models.py* to train benign and trojaned models, including models trojaned with the agnostic/specific backdoor, the patch/blending/filter/natural trigger.
+Original project: [Free Eagle Official Repository](https://github.com/FuChong-cyber/Data-Free-Neural-Backdoor-Detector-FreeEagle)
+Original README: [readme-origin.md](./README-origin.md)
 
-To train models trojaned with the composite backdoor, you can use the implementation for composite backdoor at: https://github.com/TemporaryAcc0unt/composite-attack
+Purpose
+-------
+Run FreeEagle-style detection over many saved models, collect results into CSV files, and compute consolidated evaluation metrics (AUROC, F1, TPR, FPR).
 
-### Inspect the trained trojaned and benign models.
-Use *MLBackdoorDetection/inspect_multiple_models.py* to inpsect the above trained models, i.e., compute one anomaly metric value and generate one inspection result image for each model. Here are some examples of inspection result image of trojaned models, with the abnormal class pairs highlighted in yellow. It can be seen that the classes related to the backdoor are exposed, e.g., class 34 in the first image.
+Modifications of this fork
+----------------------
+- Poetry-based dependency management and a committed lockfile for reproducibility.
+- Scripts and helpers for batch execution, log parsing, and result aggregation.
+- Minor fixes to model configuration (kernel-size).
 
-If you want to inspect one single model, use *MLBackdoorDetection/backdoor_inspection_new.py*
+Repository layout (key items)
+----------------------------
+- `MLBackdoorDetection/` — core detection and analysis code.
+- `batch_free_eagle.py` — run FreeEagle over a model set and write logs.
+- `analyse_log.py` — extract metrics from logs into CSV.
+- `final_results.py` — compute final evaluation metrics from benign/trojan CSVs.
+- `readme-origin.md` — original README from upstream.
 
-The inspection results will be stored to .csv files in the root path. Generated images will be saved at *./inspect_results*.
+Environment and installation (recommended)
+-----------------------------------------
+Two common flows:
 
-<img src=https://github.com/FuChong-cyber/Data-Free-Neural-Backdoor-Detector-FreeEagle/blob/main/MLBackdoorDetection/inspect_results/poisoned_gtsrb_google_net_class-agnostic_targeted%3D34_patched_img-trigger.png width=350 height=400 /><img src=https://github.com/FuChong-cyber/Data-Free-Neural-Backdoor-Detector-FreeEagle/blob/main/MLBackdoorDetection/inspect_results/poisoned_gtsrb_google_net_class-specific_targeted%3D8_sources%3D%5B24%5D_patched_img-trigger.png width=350 height=400 /><img src=https://github.com/FuChong-cyber/Data-Free-Neural-Backdoor-Detector-FreeEagle/blob/main/MLBackdoorDetection/inspect_results/poisoned_imagenet_subset_resnet50_class-agnostic_targeted%3D6_patched_img-trigger.png width=350 height=400 /><img src=https://github.com/FuChong-cyber/Data-Free-Neural-Backdoor-Detector-FreeEagle/blob/main/MLBackdoorDetection/inspect_results/poisoned_imagenet_subset_resnet50_class-specific_targeted%3D18_sources%3D%5B13%5D_patched_img-trigger.png width=350 height=400 />
+1) Install into an existing conda environment (recommended for binary/CUDA packages):
 
-### Analyze the inspection results.
-Analyze the inspection results via *MLBackdoorDetection/analyze_result_csv.py*.
-Manual configuration is needed, e.g., setting the variable *original_dataset_name* to *gtsrb* if you want to check the defense performance on the GTSRB dataset. If one param is not specified, the result will computed on the overall setting. For example, if *original_dataset_name* is *None*, then the result will be computed on all the datasets.
+```bash
+conda create -n freeeagle python=3.8 -y
+conda activate freeeagle
+pip install --user poetry   # or pip install poetry
 
+# Make Poetry install into the current env (do not create a separate venv)
+poetry config virtualenvs.create false --local
+poetry install --no-root
+```
+
+2) Let Poetry manage a virtualenv for the project:
+
+```bash
+poetry install
+poetry run python batch_free_eagle.py --help
+```
+
+Notes
+- Install heavy binary dependencies (MKL, Intel libs, CUDA-specific PyTorch builds, tbb, triton) with `conda` to ensure ABI/CUDA compatibility. Keep those out of Poetry-managed dependencies when appropriate.
+- If you do not want Poetry to install the project package itself, use `poetry install --no-root` or set `package-mode = false` in `pyproject.toml`.
+
+Quick usage
+-----------
+Run batch detection:
+
+```bash
+poetry run python batch_free_eagle.py --dataset cifar10 --model resnet18 --type benign > batch_bengin.log
+```
+
+Extract CSV from logs:
+
+```bash
+poetry run python analyse_log.py logs batch_benign.log -o ./results/benign.csv
+```
+
+Compute final metrics:
+
+```bash
+poetry run python final_results.py --benign_csv ./results/benign.csv --trojan_csv ./results/badnet.csv --seed 42
+```
+
+Recent changes
+--------------
+- Unified kernel-size inconsistencies in model configuration; ensure custom models match repository defaults.
+- Updated Poetry guidance: prefer `poetry install --no-root` when installing into an existing conda env to avoid modifying system-level packaging tools.
+
+
+
+License
+-------
+See the `LICENSE` file in the repository root.
